@@ -11,28 +11,23 @@ lambda = c/f;
 dx = 0.25 * lambda; % distance between antennas
 N = 5; % number of antennas
 nTheta = 360;
-theta = linspace(0,2*pi,nTheta)
-% theta = 0; % direction of anetanna figure out this phase stuff later
+theta = linspace(0,2*pi,nTheta);
+phase = -25 * pi/180; % direction of anetanna figure out this phase stuff later
 k = 2 * pi/ lambda;
 AF = zeros(1,nTheta);
 
 % Array Factor value
 for t = 1:nTheta
     for n = 1:N
-        AF(t) = AF(t) + exp(1j*(n-1)*(k*dx*cos(theta(t))));
+        AF(t) = AF(t) + exp(1j*(n-1)*(k*dx*cos(theta(t))+ phase));
     end
-    AF(t) = AF(t)/2;
+    AF(t) = AF(t)/N;
 end
 
-plot(theta, abs(AF),"blue",...
+polarplot(theta, abs(AF),"blue",...
     'LineWidth',2)
 
 ax = gca; 
 gca.FontSize = 12;
-
-% red: second part subtract cos, 
-% blue: first part add cos, 
-% green: product of sinusoids,
-% magenta: check function
 
 grid on
