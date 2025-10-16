@@ -8,17 +8,31 @@
 f = 5e6; % frequency of antenna 
 c = 3e8; % speed of light
 lambda = c/f;
-dx = 0.1 * lambda; % distance between antennas
-N = 2; % number of antennas
-nTheta = 180;
-theta = linspace(0,pi,nTheta);
+dx = 0.25 * lambda; % distance between antennas
+N = 5; % number of antennas
+nTheta = 360;
+theta = linspace(0,2*pi,nTheta)
 % theta = 0; % direction of anetanna figure out this phase stuff later
 k = 2 * pi/ lambda;
-AF = zeros(size(nTheta));
+AF = zeros(1,nTheta);
 
 % Array Factor value
-for t = 1:length(nTheta)
+for t = 1:nTheta
     for n = 1:N
         AF(t) = AF(t) + exp(1j*(n-1)*(k*dx*cos(theta(t))));
     end
+    AF(t) = AF(t)/2;
 end
+
+plot(theta, abs(AF),"blue",...
+    'LineWidth',2)
+
+ax = gca; 
+gca.FontSize = 12;
+
+% red: second part subtract cos, 
+% blue: first part add cos, 
+% green: product of sinusoids,
+% magenta: check function
+
+grid on
