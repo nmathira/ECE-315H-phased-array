@@ -1,58 +1,59 @@
 % Niranjan Mathirajan, Owen Davis
-% November 8, 2025
+% October 14, 2025
 % ECE 315H MATLAB Phased Array Antenna 
-% Source 1: https://innovationspace.ansys.com/courses/wp-content/uploads/sites/5/2022/07/AntennaArrays_04ManipulatingtheArrayFactor.pdf
-% Source 2: https://www.antenna-theory.com/arrays/arrayfactor.php
-% Source 3: https://www.antenna-theory.com/definitions/wavevector.php
-
-clc;
-
-% -- constants --
-f = 5e6; % frequency of antenna (Hz)
-c = 3e8; % speed of light (m/s)
-lambda = c/f; % wavelength (m)
-k = 2 * pi/lambda; % 1-D wave vector, see source (3) (rad/m)
 
 
-% -- array parameters --
-N = 4; % number of antennas
-nTheta = 180; 
-theta = linspace(-pi/2, pi/2, nTheta); % range of angles the array "sees"
-steerAngle = 0 * pi/180; % steering angle of array
-dx_ideal = 0.25 * lambda; % expected distance between antennas
-dx_range = .05 * lambda; % max variation in spacing
-phase = -k * dx_ideal * cos(steerAngle); % term added to each AF to aim beam
-measure_angle_deg = 15; % angle we measure AF at (range from 1 to 90)
-measure_angle_rad = measure_angle_deg * 2*pi / 360;
+% https://innovationspace.ansys.com/courses/wp-content/uploads/sites/5/2022/07/AntennaArrays_04ManipulatingtheArrayFactor.pdf
 
-avg_intensity = 0;
-for i = 1:20000
-    dx_actual = (dx_ideal-dx_range) + (dx_range + dx_range).*rand(1,N); % compute random spacing
-    % -- compute array factor -- 
-    AF = zeros(nTheta,1); 
-    for t = 1:nTheta
-        for n = 1:N
-            % AF equation from source (1):
-            AF(t) = AF(t) + exp(1j*(n-1)*(k*dx_actual(n)*cos(theta(t)) + phase)); 
-        end
-        AF(t) = AF(t)/N; % normalize AF, so max gain is 0dB
+f = 5e6; % frequency of antenna 
+c = 3e8; % speed of light
+lambda = c/f;
+k = 2 * pi/ lambda;
+nTheta = 180;
+N = 16; % number of antennas
+
+% error_mean = 
+error_variation = 0.05 * lambda;
+dx = 0.25 * lambda;
+dx_error = (rand(1,N) - 0.5) * error_variation;
+
+dx_total = (dx + dx_error); % distance between antennas
+theta = linspace(-pi/2, pi/2, nTheta);
+steerAngle = 30 * pi/180; 
+phase = -k * dx * cos(steerAngle);
+
+% absolute antenna positions
+% x = zeros(1, N); 
+% for n = 1:N
+%     x(n) = (n-1) * dx + dx_error(n);
+% end
+
+
+AF_ideal = zeros(nTheta,1);
+AF_uneven = zeros(nTheta,1);
+
+% Array Factor value
+for t = 1:nTheta
+    for n = 1:N
+        AF_ideal(t) = AF_ideal(t) + exp(1j*(n-1)*(k*dx*cos(theta(t)) + phase));
+        AF_uneven(t) = AF_uneven(t) + exp(1j*(n-1)*(k*dx_total(n)*cos(theta(t)) + phase));
     end
-    avg_intensity = avg_intensity + abs(AF(measure_angle_deg + 90));
 end
 
-avg_intensity = avg_intensity/20000
+AF_ideal(t) = AF_ideal(t)/N;
+AF_uneven(t) = AF_uneven(t)/N;
+AF_error = AF_ideal - AF_uneven;
 
-%{
-% -- plotting --
-hps = polaraxes;
-polarplot(theta, abs(AF),"blue", 'LineWidth',2); % plot AF
-hold on;
-% place dot on AF at our measure angle
-polarplot(measure_angle_rad, abs(AF(measure_angle_deg + 90)), 'o', 'MarkerSize', 7, 'MarkerFaceColor', 'r', 'MarkerEdgeColor','black');
-hps.ThetaZeroLocation = 'top'; % make 0 degrees show up at top of plot
+polarplot(theta, abs(AF_ideal),"blue",...
+    theta, abs(AF_error),"red",...
+    theta, abs(AF_uneven), "green",...
+    'LineWidth',2)
+
+% 
+% polarplot(theta, abs(AF_ideal),"blue",...
+%     'LineWidth',2)
+
 ax = gca; 
-hps.ThetaDir = 'clockwise';
 gca.FontSize = 12;
-title('Normalized Array Factor (Unitless)');
-grid on;
-%}
+
+grid on
