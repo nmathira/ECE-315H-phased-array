@@ -8,13 +8,25 @@
 f = 5e6; % frequency of antenna 
 c = 3e8; % speed of light
 lambda = c/f;
-dx = 0.25 * lambda; % distance between antennas
-N = 5; % number of antennas
+dx = 0.8 * lambda; % distance between antennas
+N = 16; % number of antennas
 nTheta = 360;
-theta = linspace(0,2*pi,nTheta);
-phase = -25 * pi/180; % direction of anetanna figure out this phase stuff later
+theta = linspace(-pi,pi,nTheta);
+phase = -0 * pi/180; % direction of anetanna figure out this phase stuff later
 k = 2 * pi/ lambda;
 AF = zeros(1,nTheta);
+
+
+SLL = 2;
+SLL_R = 10^(SLL);
+t0 = cosh(acosh(SLL_R)/((N-1)));
+
+m = zeros(0,N-1);
+psi_m = pi * (2*m/(N-1) - 1);
+
+% Solving Dolph-Chebyshev
+
+
 
 % Array Factor value
 for t = 1:nTheta
@@ -24,7 +36,7 @@ for t = 1:nTheta
     AF(t) = AF(t)/N;
 end
 
-polarplot(theta, abs(AF),"blue",...
+plot(theta, abs(AF),"blue",...
     'LineWidth',2)
 
 ax = gca; 
