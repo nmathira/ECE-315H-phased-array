@@ -42,7 +42,7 @@ hps = polaraxes;
 polarplot(theta, abs(AF),"blue", 'LineWidth',2); % plot AF
 hold on;
 % place dot on AF at our measure angle
-polarplot(measure_angle_rad, abs(AF(measure_angle_deg + 90)), 'o', 'MarkerSize', 10, 'MarkerFaceColor', 'r');
+polarplot(measure_angle_rad, abs(AF(measure_angle_deg + 90)), 'o', 'MarkerSize', 7, 'MarkerFaceColor', 'r', 'MarkerEdgeColor','black');
 hps.ThetaZeroLocation = 'top'; % make 0 degrees show up at top of plot
 ax = gca; 
 hps.ThetaDir = 'clockwise';
