@@ -6,6 +6,7 @@
 % Source 3: https://www.antenna-theory.com/definitions/wavevector.php
 
 clc;
+clf;
 
 % -- constants --
 f = 5e6; % frequency of antenna (Hz)
@@ -19,28 +20,26 @@ N = 4; % number of antennas
 nTheta = 180; 
 theta = linspace(-pi/2, pi/2, nTheta); % range of angles the array "sees"
 steerAngle = 0 * pi/180; % steering angle of array
-dx_ideal = 0.25 * lambda; % expected distance between antennas
-dx_range = .05 * lambda; % max variation in spacing
+dx_ideal = 0.5 * lambda; % expected distance between antennas
+dx_range = .2 * lambda; % max variation in spacing
+dx_actual = (dx_ideal-dx_range) + (dx_range + dx_range).*rand(1,N); % compute random spacing
 phase = -k * dx_ideal * cos(steerAngle); % term added to each AF to aim beam
 measure_angle_deg = 15; % angle we measure AF at (range from 1 to 90)
 measure_angle_rad = measure_angle_deg * 2*pi / 360;
 
-avg_intensity = 0;
-for i = 1:20000
-    dx_actual = (dx_ideal-dx_range) + (dx_range + dx_range).*rand(1,N); % compute random spacing
-    % -- compute array factor -- 
-    AF = zeros(nTheta,1); 
-    for t = 1:nTheta
-        for n = 1:N
-            % AF equation from source (1):
-            AF(t) = AF(t) + exp(1j*(n-1)*(k*dx_actual(n)*cos(theta(t)) + phase)); 
-        end
-        AF(t) = AF(t)/N; % normalize AF, so max gain is 0dB
+
+% -- compute array factor -- 
+AF = zeros(nTheta,1); 
+for t = 1:nTheta
+    for n = 1:N
+        % AF equation from source (1):
+        AF(t) = AF(t) + exp(1j*(n-1)*(k*dx_actual(n)*cos(theta(t)) + phase)); 
     end
-    avg_intensity = avg_intensity + abs(AF(measure_angle_deg + 90));
+    AF(t) = AF(t)/N; % normalize AF, so max gain is 0dB
 end
 
-avg_intensity = avg_intensity/20000
+% -- compute average intensity at measure angle -- 
+
 
 %{
 % -- plotting --
@@ -55,4 +54,7 @@ hps.ThetaDir = 'clockwise';
 gca.FontSize = 12;
 title('Normalized Array Factor (Unitless)');
 grid on;
+
+
+
 %}
