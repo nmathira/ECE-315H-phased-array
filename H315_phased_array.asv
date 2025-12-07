@@ -1,6 +1,6 @@
 % Niranjan Mathirajan, Owen Davis
-% December 7, 2025
-% Phased Array Spacing Playground
+% November 8, 2025
+% ECE 315H MATLAB Phased Array Antenna 
 % Source 1: https://innovationspace.ansys.com/courses/wp-content/uploads/sites/5/2022/07/AntennaArrays_04ManipulatingtheArrayFactor.pdf
 % Source 2: https://www.antenna-theory.com/arrays/arrayfactor.php
 % Source 3: https://www.antenna-theory.com/definitions/wavevector.php
@@ -38,8 +38,6 @@ for t = 1:nTheta
     AF(t) = AF(t)/N; % normalize AF, so max gain is 0dB
 end
 
-% ---BROKEN EXPECTED VALUE, DOESN'T WORK NOW, DIDNT WORK BEFORE---
-%{
 Ey = 0*(1:N);
 for n = 1:N
     if n == 1
@@ -51,7 +49,8 @@ for n = 1:N
     end
 end
 disp(sum(abs(Ey))/N)
-%}
+
+
 
 
 % -- plotting --
