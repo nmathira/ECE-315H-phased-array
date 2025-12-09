@@ -13,36 +13,69 @@ f = 5e6; % frequency of antenna (Hz)
 c = 3e8; % speed of light (m/s)
 lambda = c/f; % wavelength (m)
 k = 2 * pi/lambda; % 1-D wave vector, see source (3) (rad/m)
-
+T = 20000; % number of trials performed
 
 % -- array parameters --
-N = 4; % number of antennas
+N = 16; % number of antennas
 nTheta = 180; 
 theta = linspace(-pi/2, pi/2, nTheta); % range of angles the array "sees"
-steerAngle = 0 * pi/180; % steering angle of array
-dx_ideal = 0.5 * lambda; % expected distance between antennas
-dx_error = 0.1 * lambda; % max variation in spacing
-dx_actual = unifrnd(dx_ideal - dx_error, dx_ideal + dx_error, N); % compute random spacing
+steerAngle = 50 * pi/180; % steering angle of array
+dx_ideal = 0.25 * lambda; % expected distance between antennas
+dx_error = 0.05 * lambda; % max variation in spacing
+% 
+% dx_actual = zeros(N,1);
+% for n = 1:N
+%     dx_actual(n) = dx_ideal - dx_error + 2*dx_error*rand();
+% end
+% 
+% pct_error = abs(dx_actual - dx_ideal)/dx_ideal * 100;
+% disp(pct_error);
+
 phase = -k * dx_ideal * cos(steerAngle); % term added to each AF to aim beam
-measure_angle_deg = 0; % angle we measure AF at (range from 1 to 90)
+measure_angle_deg = 50; % angle we measure AF at (range from 1 to 90)
 measure_angle_rad = measure_angle_deg * 2*pi / 360;
 
+simulated_average = zeros(T,1);
+
 % -- compute array factor -- NO RANDOM SPACING
-AF = zeros(nTheta,1); 
-for t = 1:nTheta
+
+for i = 1:T
+    AF = zeros(nTheta,1); 
+    dx_actual = zeros(N,1);
     for n = 1:N
-        % AF equation from source (1):
-        AF(t) = AF(t) + exp(1j*(n-1)*(k*dx_ideal*cos(theta(t)) + phase)); 
+        dx_actual(n) = dx_ideal - dx_error + 2*dx_error*rand();
     end
-    AF(t) = AF(t)/N; % normalize AF, so max gain is 0dB
+
+
+    for t = 1:nTheta
+        for n = 1:N
+            % AF equation from source (1):
+            AF(t) = AF(t) + exp(1j*(n-1)*(k*dx_actual(n)*cos(theta(t)) - k*dx_ideal*cos(steerAngle))); 
+        end
+        AF(t) = AF(t)/N; % normalize AF, so max gain is 0dB
+    end
+    simulated_average(i) = abs(AF(measure_angle_deg+90));
 end
+
+simulated_average = mean(simulated_average)
 
 E = 0;
 for n = 1:N
-    E = E + exp(1j*(n-1)*(k*dx_ideal*cos(measure_angle_rad) + phase));
+    m = n-1;
+    main_term = exp(1j*k*(n-1)*cos(measure_angle_rad)*dx_ideal);
+    phase_term = exp(-1j*k*(n-1)*dx_ideal*cos(steerAngle));
+
+    if m == 0
+        random_variable = 1;   % when working at 0 degrees, the denominator blows up, causing errors.
+    else
+        random_variable = (exp(1j*k*m*cos(measure_angle_rad)*dx_error) ...
+            - exp(1j*k*m*cos(measure_angle_rad)*-1*dx_error))./(1j*k*m*cos(measure_angle_rad)*2*dx_error);
+    end
+    E = E + (main_term * phase_term * random_variable);
 end
-disp(E/N)
-disp(AF(measure_angle_deg + 90))
+
+disp(abs(E/N))
+% disp(AF(measure_angle_deg +90))
 
 
 % -- plotting --

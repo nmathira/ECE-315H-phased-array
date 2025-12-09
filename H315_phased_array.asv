@@ -20,29 +20,41 @@ N = 4; % number of antennas
 nTheta = 180; 
 theta = linspace(-pi/2, pi/2, nTheta); % range of angles the array "sees"
 steerAngle = 0 * pi/180; % steering angle of array
-dx_ideal = 0.5 * lambda; % expected distance between antennas
-dx_error = 0.1 * lambda; % max variation in spacing
-dx_actual = unifrnd(dx_ideal - dx_error, dx_ideal + dx_error, N); % compute random spacing
+dx_ideal = 0.25 * lambda; % expected distance between antennas
+dx_error = 0.0 * lambda; % max variation in spacing
+
+dx_actual = zeros(N,1);
+for n = 1:N
+    dx_actual(n) = dx_ideal - dx_error + 2*dx_error*rand();
+end
+
+pct_error = abs(dx_actual - dx_ideal)/dx_ideal * 100;
+disp(pct_error);
+
 phase = -k * dx_ideal * cos(steerAngle); % term added to each AF to aim beam
-measure_angle_deg = 0; % angle we measure AF at (range from 1 to 90)
+measure_angle_deg = 50; % angle we measure AF at (range from 1 to 90)
 measure_angle_rad = measure_angle_deg * 2*pi / 360;
 
-% -- compute array factor -- 
+% -- compute array factor -- NO RANDOM SPACING
 AF = zeros(nTheta,1); 
 for t = 1:nTheta
     for n = 1:N
         % AF equation from source (1):
-        AF(t) = AF(t) + exp(1j*(n-1)*(k*dx_ideal*cos(theta(t)) + phase)); 
+        AF(t) = AF(t) + exp(1j*(n-1)*(k*dx_actual(n)*cos(theta(t)) - k*dx_ideal*cos(steerAngle))); 
     end
     AF(t) = AF(t)/N; % normalize AF, so max gain is 0dB
 end
 
 E = 0;
 for n = 1:N
-    E = E + exp(1j*(n-1)*(k*dx_ideal*cos(measure_angle_rad) + phase));
+    main_term = exp(1j*k*(n-1)*cos(measure_angle_rad)*dx_ideal);
+    phase_term = exp(1j*k*dx_ideal*cos(steerAngle));
+    random_variable = (exp(1j*k*cos(measure_angle_rad)*dx_error) ...
+        - exp(1j*k*cos(measure_angle_rad)*-1*dx_error))./(1j*k*cos(measure_angle_rad)*2*dx_error);
+    E = E + (main_term * phase_term * random_variable);
 end
 disp(E/N)
-disp(AF(measure_angle_deg + 90))
+disp(AF(measure_angle_deg +90))
 
 
 % -- plotting --
