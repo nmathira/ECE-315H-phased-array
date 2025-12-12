@@ -20,18 +20,18 @@ clc;
 clf;
 
 % -- constants --
-T = 100; % number of trials performed
+T = 5000; % number of trials performed
 f = 5e6; % frequency of antenna (Hz)
 c = 3e8; % speed of light (m/s)
 lambda = c/f; % wavelength (m)
 k = 2 * pi/lambda; % 1-D wave vector, see source (3) (rad/m)
 
 % -- array parameters --
-N = 16; % number of antennas
+N = 8; % number of antennas
 nTheta = 180;
 theta = linspace(-pi/2, pi/2, nTheta); % range of angles the array "sees"
-steerAngle = 30 * pi/180; % steering angle of array
-dx_ideal = 0.25 * lambda; % expected distance between antennas
+steerAngle = -30 * pi/180; % steering angle of array
+dx_ideal = 0.5 * lambda; % expected distance between antennas
 dx_error = 0.05 * lambda; % max variation in spacing
 
 phase = -k * dx_ideal * cos(steerAngle); % term added to each AF to aim beam
@@ -43,28 +43,25 @@ measure_angle_rad = measure_angle_deg * 2*pi / 360;
 simulated_average = zeros(T,1);
 for i = 1:T
     AF = zeros(nTheta,1);
-
-    % --- get spacings ---
+    % --- get position errors (non-cumulative) ---
     dx_actual = zeros(N,1);
     for n = 1:N
-        dx_actual(n) = dx_ideal - dx_error + 2*dx_error*rand();
+        dx_actual(n) = -dx_error + 2*dx_error*rand();
     end
-
+    
     % --- get Array Factor for every angle
     for t = 1:nTheta
         for n = 1:N
             % AF equation from source (1):
-            main_term = k*dx_actual(n)*cos(theta(t));
-            phase_term = - k*dx_ideal*cos(steerAngle);
-
-            AF(t) = AF(t) + exp(1j*(n-1)*(main_term + phase_term));
+            main_term = k*cos(theta(t))*((n-1)*dx_ideal + dx_actual(n));
+            phase_term = -(n-1)*k*dx_ideal*cos(steerAngle);
+            AF(t) = AF(t) + exp(1j*(main_term + phase_term));
         end
-        AF(t) = AF(t)/N; % normalize AF, so max gain is 0dB
     end
-    simulated_average(i) = abs(AF(measure_angle_deg+90));
+    simulated_average(i) = AF(measure_angle_deg+90)/N;
 end
 
-simulated_average = mean(simulated_average)
+simulated_avg = mean(abs(simulated_average))
 
 % --- Expected calculation ---
 
@@ -75,21 +72,12 @@ for n = 1:N
     % previous.
     main_term = exp(1j*k*m*cos(measure_angle_rad)*dx_ideal);
     phase_term = exp(-1j*k*m*dx_ideal*cos(steerAngle));
-
-    if m == 0
-        % when working at 0th antenna, the random variable doesn't work.
-        % I'm guessing it's because there's no randomness in it's
-        % placement? The practical reason is that the n-1 term causes a 0
-        % in the numerator and denominator.
-        random_variable = 1;
-    else
-        random_variable = (exp(1j*k*m*cos(measure_angle_rad)*dx_error) ...
-            - exp(1j*k*m*cos(measure_angle_rad)*-1*dx_error))./(1j*k*m*cos(measure_angle_rad)*2*dx_error);
-    end
+    random_variable = (exp(1j*k*cos(measure_angle_rad)*dx_error) ...
+            - exp(1j*k*cos(measure_angle_rad)*-1*dx_error))/(1j*k*cos(measure_angle_rad)*2*dx_error);
     E = E + (main_term * phase_term * random_variable);
 end
 
-disp(abs(E/N))
+disp(abs(E)/N)
 % disp(AF(measure_angle_deg +90))
 
 
