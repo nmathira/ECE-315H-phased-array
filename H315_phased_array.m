@@ -17,25 +17,24 @@
 % ideal distribution of dx_error (uniform), so that we can calculate the
 % true error.
 clc;
-clf;
 
 % -- constants --
-T = 5000; % number of trials performed
+T = 150; % number of trials performed
 f = 5e6; % frequency of antenna (Hz)
 c = 3e8; % speed of light (m/s)
 lambda = c/f; % wavelength (m)
 k = 2 * pi/lambda; % 1-D wave vector, see source (3) (rad/m)
 
 % -- array parameters --
-N = 8; % number of antennas
+N = 12; % number of antennas
 nTheta = 180;
 theta = linspace(-pi/2, pi/2, nTheta); % range of angles the array "sees"
 steerAngle = -30 * pi/180; % steering angle of array
-dx_ideal = 0.5 * lambda; % expected distance between antennas
-dx_error = 0.05 * lambda; % max variation in spacing
+dx_ideal = 0.25 * lambda; % expected distance between antennas
+dx_error = 0.1 * lambda; % max variation in spacing
 
 phase = -k * dx_ideal * cos(steerAngle); % term added to each AF to aim beam
-measure_angle_deg = 30; % angle we measure AF at (range from 1 to 90)
+measure_angle_deg = 45; % angle we measure AF at (range from 1 to 90)
 measure_angle_rad = measure_angle_deg * 2*pi / 360;
 
 % --- Monte Carlo Simulation ---
@@ -63,6 +62,7 @@ end
 
 simulated_avg = mean(abs(simulated_average))
 
+
 % --- Expected calculation ---
 
 E = 0;
@@ -76,12 +76,29 @@ for n = 1:N
             - exp(1j*k*cos(measure_angle_rad)*-1*dx_error))/(1j*k*cos(measure_angle_rad)*2*dx_error);
     E = E + (main_term * phase_term * random_variable);
 end
+Expected = abs(E)/N 
 
-disp(abs(E)/N)
-% disp(AF(measure_angle_deg +90))
-
+%{
+% -- plotting Error vs Trials --
+figure;
+% Calculate cumulative average as T increases
+cumulative_avg = cumsum(abs(simulated_average)) ./ (1:T)';
+semilogx(1:T, cumulative_avg, 'b', 'LineWidth', 1.5); % Changed to semilogx for log scale on x-axis
+hold on;
+% Add horizontal line at the expected calculated average
+yline(Expected, 'r--', 'LineWidth', 1.5);
+xlabel('Number of Monte Carlo Trials (T)');
+ylabel('Cumulative Average |AF|');
+title('Monte Carlo Average vs. Expected Value');
+legend('Monte Carlo Average', 'Expected Value', 'Location', 'best');
+grid on;
+% Center the plot on Expected with a range of 1
+ylim([Expected - 0.5, Expected + 0.5]);
+xlim([1 T]); % Ensure x-axis shows full range
+%}
 
 % -- plotting --
+figure;
 hps = polaraxes;
 polarplot(theta, abs(AF),"blue", 'LineWidth',2); % plot AF
 hold on;
@@ -93,6 +110,3 @@ hps.ThetaDir = 'clockwise';
 gca.FontSize = 12;
 title('Normalized Array Factor (Unitless)');
 grid on;
-
-
-
