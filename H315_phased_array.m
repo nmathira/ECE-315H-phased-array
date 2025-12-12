@@ -27,12 +27,12 @@ lambda = c/f; % wavelength (m)
 k = 2 * pi/lambda; % 1-D wave vector, see source (3) (rad/m)
 
 % -- array parameters --
-N = 8; % number of antennas
+N = 16; % number of antennas
 nTheta = 180;
 theta = linspace(-pi/2, pi/2, nTheta); % range of angles the array "sees"
 steerAngle = -30 * pi/180; % steering angle of array
 dx_ideal = 0.5 * lambda; % expected distance between antennas
-dx_error = 0.05 * lambda; % max variation in spacing
+dx_error = 0.5 * lambda; % max variation in spacing
 
 phase = -k * dx_ideal * cos(steerAngle); % term added to each AF to aim beam
 measure_angle_deg = 30; % angle we measure AF at (range from 1 to 90)
@@ -61,7 +61,7 @@ for i = 1:T
     simulated_average(i) = AF(measure_angle_deg+90)/N;
 end
 
-simulated_avg = mean(abs(simulated_average))
+simulated_avg = abs(mean(simulated_average));
 
 % --- Expected calculation ---
 
@@ -77,8 +77,32 @@ for n = 1:N
     E = E + (main_term * phase_term * random_variable);
 end
 
+E_2 = 0;
+for n= 1:N
+    for m = 1:N
+        main_term = exp(1j*k*dx_ideal*cos(measure_angle_rad)*(n-m));
+        phase_term = exp(-1j*k*dx_ideal*cos(steerAngle)*(n-m));
+        if n == m
+            % Diagonal: error_n - error_n = 0, so exp(0) = 1
+            random_variable = 1;
+        else
+            random_variable_n = (exp(1j*k*cos(measure_angle_rad)*dx_error) ...
+            - exp(1j*k*cos(measure_angle_rad)*-1*dx_error))/(1j*k*cos(measure_angle_rad)*2*dx_error);
+            random_variable_m = (exp(-1j*k*cos(measure_angle_rad)*dx_error) ...
+            - exp(1j*k*cos(measure_angle_rad)*dx_error))/(-1j*k*cos(measure_angle_rad)*2*dx_error);
+
+            random_variable = random_variable_n*random_variable_m;
+        end
+
+        E_2 = E_2 + (main_term * phase_term * random_variable);
+    end
+end
+
+Var = (abs(E_2))/N^2 - abs(E/N)^2
+var(simulated_average)
+
+disp(simulated_avg)
 disp(abs(E)/N)
-% disp(AF(measure_angle_deg +90))
 
 
 % -- plotting --
@@ -93,6 +117,3 @@ hps.ThetaDir = 'clockwise';
 gca.FontSize = 12;
 title('Normalized Array Factor (Unitless)');
 grid on;
-
-
-
