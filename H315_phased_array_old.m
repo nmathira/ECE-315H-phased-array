@@ -76,7 +76,7 @@ for n = 1:N
             - exp(1j*k*cos(measure_angle_rad)*-1*dx_error))/(1j*k*cos(measure_angle_rad)*2*dx_error);
     E = E + (main_term * phase_term * random_variable);
 end
-Expected = abs(E)/N;
+Expected = abs(E)/N 
 
 E_2 = 0;
 for n= 1:N
@@ -99,17 +99,11 @@ for n= 1:N
     end
 end
 
+Var = (abs(E_2))/N^2 - abs(E/N)^2
+var(simulated_average)
 
-
-disp(simulated_avg);
-disp(abs(E)/N);
-
-Var = (abs(E_2))/N^2 - abs(E/N)^2;
-var(simulated_avg);
-
-fprintf('Expected Value: %.4f | Variance: %.6f\n', Expected, Var);
-fprintf('Expected Value: %.4f | Variance: %.6f\n', simulated_avg, var(simulated_average));
-
+disp(simulated_avg)
+disp(abs(E)/N)
 %{
 % -- plotting Error vs Trials --
 figure;
